@@ -17,7 +17,7 @@ if 'words' not in st.session_state:
 # ゲーム開始ボタンと途中中止ボタンを定義
 st.markdown("<h1 style='color:white;'>PokeType!</h1>", unsafe_allow_html=True)
 start_game_button = st.button('ゲーム開始')
-stop_game_button = st.button('途中中止')
+stop_game_button = st.button('ホームに戻る')
 
 # HTMLとJSでゲームロジックを組み込む部分
 game_html = """
@@ -69,7 +69,10 @@ game_html = """
         </div>
         <br>
         <span id = "loadIcon" class="spinner"></span>
-        <span id = "load">ポケモン取得中</span>
+        <span id = "load">ポケモン捕獲中</span>
+        <div id="progress-container" style="width: 100%; background-color: #ddd; margin: 20px 0;">
+            <div id="progress-bar" style="width: 0%; height: 20px; background-color: #4caf50;"></div>
+        </div>
         <div id="countdown" style="font-size: 50px;"></div>
         <div id="word-display" class="word"></div>
         <div id="poke-image"></div>
@@ -111,12 +114,12 @@ game_html = """
         let wordStats = []; // 各単語のステータスを格納する配列
         let wordStartTime = []; // 各単語が出題された時刻を記録
 
-        // ランダムなポケモンを10匹取得する関数
         async function getRandomPokemon() {
             const pokemonList = [];
-            
-            // 10回繰り返してランダムなポケモンを取得
-            for (let i = 0; i < 10; i++) {
+            const totalPokemon = 10; // 合計10匹
+            const progressBar = document.getElementById("progress-bar");
+
+            for (let i = 0; i < totalPokemon; i++) {
                 const randomId = Math.floor(Math.random() * 898) + 1;
 
                 try {
@@ -137,13 +140,19 @@ game_html = """
                     images.push(pokemonImage); // pokemonImageをimagesに追加
                     Japaneses.push(pokemonJapaneseName);
 
+                    // プログレスバーを更新
+                    const progressPercentage = ((i + 1) / totalPokemon) * 100;
+                    progressBar.style.width = `${progressPercentage}%`;
+
                 } catch (error) {
                     console.error(`ポケモンID ${randomId} の情報取得に失敗しました:`, error);
                 }
             }
+
             // すべてのポケモンのデータが取得できた後にゲームを開始
             fetchWords(); // ゲーム開始
         }
+
 
         // 日本語名を取得する関数
         async function getPokemonJapaneseName(speciesUrl) {
@@ -189,6 +198,7 @@ game_html = """
         function startGame() {
             document.getElementById('load').style.display = 'none';
             document.getElementById('loadIcon').style.display = 'none';
+            document.getElementById("progress-bar").style.display = 'none';
             document.getElementById('countdown').style.display = 'block';
             let countdown = 3;
             let countdownInterval = setInterval(function() {
